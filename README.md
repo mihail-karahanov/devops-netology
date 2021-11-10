@@ -1,11 +1,10 @@
 # devops-netology
 
 ## 2.4. Инструменты Git - Михаил Караханов
-**1. Найдите полный хеш и комментарий коммита, хеш которого начинается на`aefea`.**
-- Выполнил поиск командой `git show aefea`.
+**1. Найдите полный хеш и комментарий коммита, хеш которого начинается на `aefea`.**
+- Выполнил поиск командой `git log -1 --oneline --no-abbrev aefea`.
 - Результат: \
-`commit aefead2207ef7e2aa5dc81a34aedf0cad4c32545` \
-`Author: Alisdair McDiarmid <alisdair@users.noreply.github.com>`
+`aefead2207ef7e2aa5dc81a34aedf0cad4c32545 Update CHANGELOG.md`
 
 **2. Какому тегу соответствует коммит `85024d3`?**
 - Выполнил поиск командой `git show --oneline 85024d3`
