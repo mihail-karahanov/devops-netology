@@ -21,6 +21,12 @@
     [Install]
     WantedBy=multi-user.target
     ```
+  - В файле `/opt/node-exporter/main.conf` следующее содержание (параметр закомментирован т.к. пока не используется):
+    ```
+    # Node Exporter Configuration File
+
+    #EXTRA_OPTS=
+    ```
   - выполнено подключение и запуск службы командами `sudo systemctl enable node-exporter` и `sudo systemctl start node-exporter`. Далее последовательно выполнены команды stop, start и restart службы. Результат проверки состояния службы:
     ![service status](img/node_exporter.png)
 
@@ -52,3 +58,24 @@
   - `node_network_transmit_errs_total`
 
 **3. Установите в свою виртуальную машину `Netdata`...**
+- Пакет установлен. Результат:
+  ![netdata status](img/netdata.png)
+
+**4. Можно ли по выводу `dmesg` понять, осознает ли ОС, что загружена не на настоящем оборудовании, а на системе виртуализации?**
+- Ответ: да, это можно понять по следующему выводу:
+  ```
+  vagrant@vagrant:~$ sudo dmesg | grep -i virtual
+  [    0.000000] DMI: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
+  [    0.004630] CPU MTRRs all blank - virtualized system.
+  [    0.141069] Booting paravirtualized kernel on KVM
+  [    3.294573] systemd[1]: Detected virtualization oracle.
+  ```
+**5. Как настроен sysctl `fs.nr_open` на системе по-умолчанию? Узнайте, что означает этот параметр. Какой другой существующий лимит не позволит достичь такого числа (`ulimit --help`)?**
+- Ответ: данный параметр определяет максимальное количество файл-дескрипторов, которые может открыть процесс. Значение по-умолчанию 1024\*1024 (1048576). Проверить установленное значение в системе можно командой `sudo sysctl -a --pattern fs.nr`. Вывод команды:
+  ```
+  vagrant@vagrant:~$ sudo sysctl -a --pattern fs.nr
+  fs.nr_open = 1048576
+  ```
+  Данный параметр зависит от системного лимита RLIMIT_NOFILE.
+
+**6. Запустите любой долгоживущий процесс (не `ls`, который отработает мгновенно, а, например, `sleep 1h`) в отдельном неймспейсе процессов; покажите, что ваш процесс работает под PID 1 через `nsenter`. Для простоты работайте в данном задании под root (`sudo -i`). Под обычным пользователем требуются дополнительные опции (`--map-root-user`) и т.д.**
