@@ -1,55 +1,49 @@
 # devops-netology
 
-## 3.8. Компьютерные сети, лекция 3 - Михаил Караханов
+## 3.9. Элементы безопасности информационных систем - Михаил Караханов
 
 
-**1. Подключитесь к публичному маршрутизатору в интернет. Найдите маршрут к вашему публичному IP**
-- Результат:
+**1. Установите Bitwarden плагин для браузера. Зарегестрируйтесь и сохраните несколько паролей.**
+- Результат: выполнено \
+  ![bitwarden](img/bitwarden.png)
+
+**2. Установите Google authenticator на мобильный телефон. Настройте вход в Bitwarden акаунт через Google authenticator OTP.**
+- Результат: выполнено
+
+**3. Установите apache2, сгенерируйте самоподписанный сертификат, настройте тестовый сайт для работы по HTTPS.**
+- Настроил проброс портов в vagrant
   ```
-  route-views>show ip route 80.78.245.155
-  Routing entry for 80.78.245.0/24
-    Known via "bgp 6447", distance 20, metric 0
-    Tag 6939, type external
-    Last update from 64.71.137.241 5d07h ago
-    Routing Descriptor Blocks:
-    * 64.71.137.241, from 64.71.137.241, 5d07h ago
-        Route metric is 0, traffic share count is 1
-        AS Hops 3
-        Route tag 6939
-        MPLS label: none
-  route-views>
-  route-views>show bgp 80.78.245.155     
-  BGP routing table entry for 80.78.245.0/24, version 1388695216
-  Paths: (23 available, best #22, table default)
-    ------------------------
-    6939 39134 197695
-      64.71.137.241 from 64.71.137.241 (216.218.252.164)
-        Origin IGP, localpref 100, valid, external, best
-        path 7FE0DB0D2308 RPKI State valid
-        rx pathid: 0, tx pathid: 0x0
-    Refresh Epoch 1
-    -------------------------
-
+  config.vm.network "forwarded_port", guest: 80, host: 8080
+  config.vm.network "forwarded_port", guest: 443, host: 8083
   ```
+- Выполнил установку apache командой `sudo apt install apache2`. Включил модуль SSL командой `sudo a2enmod ssl`. Включил модуль mod_headers командой `sudo a2enmod headers`.
+- Сгенерировал самоподписанный сертификат
+- С помощью ресурса https://ssl-config.mozilla.org/ подготовил конфигурацию веб-сервера:
+  ```
+  <VirtualHost *:443>
+    ServerName dumb.com
+    DocumentRoot /var/www/html
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/apache-selfsigned.crt
+    SSLCertificateKeyFile /etc/ssl/private/apache-selfsigned.key
+    # enable HTTP/2, if available
+    Protocols h2 http/1.1
+    # HTTP Strict Transport Security (mod_headers is required) (63072000 seconds)
+    Header always set Strict-Transport-Security "max-age=63072000"
+  </VirtualHost>
 
-**2. Создайте dummy0 интерфейс в Ubuntu. Добавьте несколько статических маршрутов. Проверьте таблицу маршрутизации.**
-- Результат: подгружен модуль ядра `dummy`, создан интерфейс `dummy0` и добавлены статические маршруты: \
-  ![dummy interface conf](img/dummy.png)
+  # intermediate configuration
+  SSLProtocol             all -SSLv3 -TLSv1 -TLSv1.1
+  SSLCipherSuite          ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+  SSLHonorCipherOrder     off
+  SSLSessionTickets       off
 
-**3. Проверьте открытые TCP порты в Ubuntu, какие протоколы и приложения используют эти порты? Приведите несколько примеров.**
-- Результат: для проверки TCP-портов в статусе LISTEN, воспользовался командой `ss -4lntp`. Вывод команды: \
-  ![tcp ports](img/tcp_open_ports.png)
-  - порт 53 - это локальный DNS-резолвер Ubuntu
-  - порт 22 - это SSH-сервер
-  - порт 111 - `rpcbind`, сервис для обслуживания удаленных вызовов по протоколу RPC
-
-**4. Проверьте используемые UDP сокеты в Ubuntu, какие протоколы и приложения используют эти порты?**
-- Результат: для проверки используемых UDP-сокетов воспользовался командой `ss -4nuap`. Вывод команды: \
-  ![udp sockets](img/udp_sockets.png)
-  - порт 53 - это локальный DNS-резолвер Ubuntu
-  - порт 68 - это локальный DHCP-клиент
-  - порт 111 - `rpcbind`, сервис для обслуживания удаленных вызовов по протоколу RPC
-
-**5. Используя diagrams.net, создайте L3 диаграмму вашей домашней сети или любой другой сети, с которой вы работали.**
-- Результат: схема домашней сети \
-  ![topology](img/topology.png)
+  SSLUseStapling On
+  SSLStaplingCache "shmcb:logs/ssl_stapling(32768)"
+  ```
+- Создал простую конфигурацию в файле `/var/www/html/index.html`:
+  ```
+  <h1>It worked!</h1>
+  ```
+- Активировал конфигурацию и перезагрузил веб-сервер. С хоста перешел в браузере по ссылке `https://127.0.0.1:8083`. Результат: \
+  ![apache](img/apache.png)
