@@ -40,7 +40,21 @@ done
 
 ### Ваш скрипт:
 ```bash
-???
+PORT=80
+IP=(192.168.0.1 173.194.222.113 87.250.250.242)
+
+for addr in ${IP[@]}; do
+    i=1
+    while (($i <= 5)); do
+        nc -w 3 $addr $PORT
+        if [ "$?" -ne 0 ]; then
+            echo "`date +\"%d %b %T\"` - Connection to $addr on $PORT port - FALSE" >> test.log
+        else
+            echo "`date +\"%d %b %T\"` - Successfully connected!" >> test.log
+        fi
+        ((i+=1))
+    done
+done
 ```
 
 ## Обязательная задача 3
@@ -48,7 +62,25 @@ done
 
 ### Ваш скрипт:
 ```bash
-???
+PORT=80
+IP=(173.194.222.113 192.168.0.1 87.250.250.242)
+
+while ((1==1)); do
+    for addr in ${IP[@]}; do
+        i=1
+        while (($i <= 5)); do
+            nc -w 3 $addr $PORT
+            if [ "$?" -ne 0 ]; then
+                echo "`date +\"%d %b %T\"` - Connection to $addr on $PORT port - FALSE" >> test.log
+                echo "$addr - unreachable" >> error.log
+                exit 1
+            else
+                echo "`date +\"%d %b %T\"` - Successfully connected!" >> test.log
+            fi
+            ((i+=1))
+        done
+    done
+done
 ```
 
 ## Дополнительное задание (со звездочкой*) - необязательно к выполнению
