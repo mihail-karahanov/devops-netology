@@ -89,5 +89,18 @@ done
 
 ### Ваш скрипт:
 ```bash
-???
+# Имя файла скрипта - "commit-msg"
+# Необходимо расположить в директории .git/hooks и сделать исполняемым
+
+msg=$1
+
+if ! [[ $msg =~ ^\[[0-9]{2}\-[a-z]+\-[0-9]{2}\-[a-z]+\] ]] && \
+    [[ ${#msg} -gt 30 ]]; then
+
+    echo "Message does not comply with the policy!"
+    echo "Please, use \"[*task_code*]\" in the beginning of the message!"
+    echo "Also, message should not contain more than 30 characters."
+    exit 1
+    
+fi
 ```
