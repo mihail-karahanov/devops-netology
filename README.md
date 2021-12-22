@@ -37,12 +37,26 @@ for result in result_os.split('\n'):
 
 ### Ваш скрипт:
 ```python
-???
+#!/usr/bin/env python3
+
+import os
+
+bash_command = ["cd ~/netology/sysadm-homeworks", "git status", "pwd"]
+result_os = os.popen(' && '.join(bash_command)).read()
+work_dir = result_os.rstrip("\n").split("\n")[-1]
+is_change = False
+for result in result_os.split('\n'):
+    if result.find('modified') != -1:
+        prepare_result = result.replace('\tmodified:   ', '')
+        print(f"{work_dir}/{prepare_result}")
 ```
 
 ### Вывод скрипта при запуске при тестировании:
 ```
-???
+netadmin@netstation:~/PycharmProjects/devops-netology$ ./1.py 
+/home/netadmin/netology/sysadm-homeworks/first_file
+/home/netadmin/netology/sysadm-homeworks/second_file
+netadmin@netstation:~/PycharmProjects/devops-netology$
 ```
 
 ## Обязательная задача 3
@@ -50,12 +64,27 @@ for result in result_os.split('\n'):
 
 ### Ваш скрипт:
 ```python
-???
+#!/usr/bin/env python3
+
+import os
+from sys import argv
+
+bash_command = [f"cd {argv[1]}", "git status", "pwd"]
+result_os = os.popen(' && '.join(bash_command)).read()
+work_dir = result_os.rstrip("\n").split("\n")[-1]
+# is_change = False - не используется
+for result in result_os.split('\n'):
+    if result.find('modified') != -1:
+        prepare_result = result.replace('\tmodified:   ', '')
+        print(f"{work_dir}/{prepare_result}")
 ```
 
 ### Вывод скрипта при запуске при тестировании:
 ```
-???
+netadmin@netstation:~/PycharmProjects/devops-netology$ ./1.py ~/netology/sysadm-homeworks
+/home/netadmin/netology/sysadm-homeworks/first_file
+/home/netadmin/netology/sysadm-homeworks/second_file
+netadmin@netstation:~/PycharmProjects/devops-netology$ 
 ```
 
 ## Обязательная задача 4
