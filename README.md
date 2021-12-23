@@ -92,12 +92,72 @@ netadmin@netstation:~/PycharmProjects/devops-netology$
 
 ### Ваш скрипт:
 ```python
-???
+#!/usr/bin/env python3
+
+import socket
+import time
+import os
+
+# Подготовка структуры для хранения значений
+services = {
+    "drive.google.com": None,
+    "mail.google.com": None,
+    "google.com": None,
+}
+
+while True:
+    # Очистка кэша DNS
+    os.popen("systemd-resolve --flush-caches")
+    # Выполнение опроса для каждого домена
+    for serv in services.keys():
+        try:
+            response = socket.gethostbyname(serv)
+            # Проверка полученных значений с предыдущими. Сохранение полученных значений
+            if services[serv] == None:
+                services[serv] = response
+                print(f"{serv} - {response}")
+            elif ( services[serv] != None ) and ( services[serv] != response ):
+                print(f"[ERROR] {serv} IP mismatch: {services[serv]} {response}")
+                services[serv] = response
+            else:
+                print(f"{serv} - {response}")
+            time.sleep(1)
+        # Обработка исключений
+        except socket.gaierror as err:
+            print(f"[ERROR] {serv} - {err}")
 ```
 
 ### Вывод скрипта при запуске при тестировании:
 ```
-???
+netadmin@netstation:~/Repositories/devops-netology$ ./1.py 
+drive.google.com - 142.251.31.194
+mail.google.com - 173.194.79.18
+google.com - 142.250.145.101
+drive.google.com - 142.251.31.194
+mail.google.com - 173.194.79.18
+[ERROR] google.com IP mismatch: 142.250.145.101 142.250.145.102
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.79.18 173.194.79.83
+[ERROR] google.com IP mismatch: 142.250.145.102 142.250.145.139
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.79.83 173.194.79.19
+[ERROR] google.com IP mismatch: 142.250.145.139 142.250.145.102
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.79.19 173.194.79.17
+[ERROR] google.com IP mismatch: 142.250.145.102 142.250.145.101
+drive.google.com - 142.251.31.194
+mail.google.com - 173.194.79.17
+[ERROR] google.com IP mismatch: 142.250.145.101 142.250.145.102
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.79.17 173.194.79.19
+[ERROR] google.com IP mismatch: 142.250.145.102 142.250.145.101
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.79.19 173.194.79.83
+google.com - 142.250.145.101
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.79.83 173.194.79.19
+[ERROR] google.com IP mismatch: 142.250.145.101 142.250.145.113
+drive.google.com - 142.251.31.194
 ```
 
 ## Дополнительное задание (со звездочкой*) - необязательно к выполнению
