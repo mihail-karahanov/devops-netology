@@ -29,22 +29,124 @@
 
 ### Ваш скрипт:
 ```python
-???
+#!/usr/bin/env python3
+
+import socket
+import time
+import os
+import json
+import yaml
+
+# Подготовка структуры для хранения значений
+service_list = [
+    { "drive.google.com": None },
+    { "mail.google.com": None },
+    { "google.com": None }
+]
+
+while True:
+    # Очистка кэша DNS
+    os.popen("systemd-resolve --flush-caches")
+    # Выполнение опроса для каждого домена
+    for srv in service_list:
+        for domain in srv.keys():
+            try:
+                response = socket.gethostbyname(domain)
+                # Проверка полученных значений с предыдущими. Сохранение полученных значений
+                if srv[domain] == None:
+                    srv[domain] = response
+                    print(f"{domain} - {response}")
+                elif ( srv[domain] != None ) and ( srv[domain] != response ):
+                    print(f"[ERROR] {domain} IP mismatch: {srv[domain]} {response}")
+                    srv[domain] = response
+                else:
+                    print(f"{domain} - {response}")
+                time.sleep(1)
+            # Обработка исключений
+            except socket.gaierror as err:
+                print(f"[ERROR] {domain} - {err}")
+    # Вывод собранной информации в файлы .json и .yml
+    with open("services.json", "w", encoding="utf-8") as j:
+        j.write(json.dumps(service_list, indent=4, ensure_ascii=False))
+    print(".json file updated")
+    with open("services.yml", "w", encoding="utf-8") as y:
+        y.write(yaml.dump(service_list, default_flow_style=False, \
+            explicit_start=True, explicit_end=True))
+    print(".yml file updated")
 ```
 
 ### Вывод скрипта при запуске при тестировании:
 ```
-???
+netadmin@netstation:~/Scripts$ ./1.py 
+drive.google.com - 142.251.31.194
+mail.google.com - 173.194.69.19
+google.com - 142.250.145.100
+.json file updated
+.yml file updated
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.69.19 173.194.69.18
+google.com - 142.250.145.100
+.json file updated
+.yml file updated
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.69.18 173.194.69.83
+google.com - 142.250.145.100
+.json file updated
+.yml file updated
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.69.83 173.194.69.17
+[ERROR] google.com IP mismatch: 142.250.145.100 142.250.145.101
+.json file updated
+.yml file updated
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.69.17 173.194.69.19
+[ERROR] google.com IP mismatch: 142.250.145.101 142.250.145.113
+.json file updated
+.yml file updated
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.69.19 173.194.69.83
+google.com - 142.250.145.113
+.json file updated
+.yml file updated
+drive.google.com - 142.251.31.194
+[ERROR] mail.google.com IP mismatch: 173.194.69.83 173.194.69.17
+[ERROR] google.com IP mismatch: 142.250.145.113 142.250.145.139
+.json file updated
+.yml file updated
+drive.google.com - 142.251.31.194
+mail.google.com - 173.194.69.17
+google.com - 142.250.145.139
+.json file updated
+.yml file updated
+drive.google.com - 142.251.31.194
+mail.google.com - 173.194.69.17
+[ERROR] google.com IP mismatch: 142.250.145.139 142.250.145.113
+.json file updated
+.yml file updated
 ```
 
 ### json-файл(ы), который(е) записал ваш скрипт:
 ```json
-???
+[
+    {
+        "drive.google.com": "142.251.31.194"
+    },
+    {
+        "mail.google.com": "173.194.69.17"
+    },
+    {
+        "google.com": "142.250.145.113"
+    }
+]
 ```
 
 ### yml-файл(ы), который(е) записал ваш скрипт:
 ```yaml
-???
+---
+- drive.google.com: 142.251.31.194
+- mail.google.com: 173.194.69.17
+- google.com: 142.250.145.113
+...
 ```
 
 ## Дополнительное задание (со звездочкой*) - необязательно к выполнению
