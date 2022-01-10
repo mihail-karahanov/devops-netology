@@ -32,4 +32,6 @@
     sudo ufw allow in on enp0s8 from any proto tcp to any port 443
     ```
 
-    - `ufw` запущен и активирован командой `sudo ufw enable`
+    - `ufw` запущен и активирован командой `sudo ufw enable` \
+    ![ufw status](diplom_img/ufw_status.png "ufw status") \
+    *ufw настроен и активирован*
