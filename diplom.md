@@ -119,3 +119,98 @@
     netadmin@netologyvm:~$ jq -r '.data.ca_chain[]' payload.json >> test.example.com.crt
     netadmin@netologyvm:~$
     ```
+
+5. Корневой сертификат импортирован в Firefox на хостовой машине:
+
+    ![ca_import](diplom_img/ca_import.png "CA cert import status") \
+    *Сертификат импортирован*
+
+6. Выполнена установка nginx командой `sudo apt install nginx`:
+
+    ![nginx](diplom_img/nginx.png "Nginx in package list") \
+    *nginx установлен в системе*
+
+7. Выполнена настройка сервера nginx. Для подготовки конфигурации использовался ресурс от DigitalOcean - https://www.digitalocean.com/community/tools/nginx :
+
+    - файл конфигурации `test.example.com.conf`, расположенный в директории `/etc/nginx/sites-available`. На него создан симлинк в директории `/etc/nginx/sites-enabled`
+
+    ```bash
+    server {
+        listen              443 ssl http2;
+        listen              [::]:443 ssl http2;
+        server_name         test.example.com;
+        root                /var/www/html;
+
+        # SSL
+        ssl_certificate     /etc/nginx/ssl/test.example.com.crt;
+        ssl_certificate_key /etc/nginx/ssl/test.example.com.key;
+
+        # security
+        include             nginxconfig.io/security.conf;
+
+        # logging
+        access_log          /var/log/nginx/test.example.com.access.log;
+        error_log           /var/log/nginx/test.example.com.error.log warn;
+
+        # index.html fallback
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # index.php fallback
+        location ~ ^/api/ {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        # additional config
+        include nginxconfig.io/general.conf;
+    }
+
+    # HTTP redirect
+    server {
+        listen      80;
+        listen      [::]:80;
+        server_name test.example.com;
+        return      301 https://test.example.com$request_uri;
+    }
+    ```
+
+    - сгенерирован файл `dhparam.pem` командой `sudo openssl dhparam -out /etc/nginx/dhparam.pem 2048`. Файл помещен в диреторию `/etc/nginx/`
+    - сгенерированные ранее файлы ключа и сертификата скопированы в директорию `/etc/nginx/ssl/`
+
+    ```bash
+    sudo cp test.example.com.* /etc/nginx/ssl/
+    ```
+
+    - создана тестовая html-страница `index.html` в директории `/var/www/html/`
+
+    ```html
+    <!DOCTYPE html>
+    <html>
+    <body>
+
+    <h1>test.example.com</h1>
+    <p>Mihail Karahanov test page</p>
+
+    </body>
+    </html> 
+    ```
+
+    - протестирована конфигурация и выполнен запуск сервер nginx
+
+    ```bash
+    sudo nginx -t
+    sudo systemctl enable nginx.service
+    sudo systemctl start nginx.service
+    ```
+
+    ![nginx_status](diplom_img/nginx_status.png "Status of Nginx service") \
+    *Служба успешно запущена*
+
+8. Проверка корректной работы сервера:
+
+    - на хостовой машине, в файле `/etc/hosts` создана запись `192.168.56.101   test.example.com`
+    - в браузере Firefox выполнен переход по адресу `https://test.example.com/`
+
+    ![test_page](diplom_img/test_page.png "Test page opening") \
+    *Страница открыласть, на сертификат браузер не ругается*
