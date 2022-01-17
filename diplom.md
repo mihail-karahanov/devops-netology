@@ -130,7 +130,7 @@
     ![nginx](diplom_img/nginx.png "Nginx in package list") \
     *nginx установлен в системе*
 
-7. Выполнена настройка сервера nginx. Для подготовки конфигурации использовался ресурс от DigitalOcean - https://www.digitalocean.com/community/tools/nginx :
+7. Выполнена настройка сервера nginx. Для подготовки конфигурации использовался ресурс от DigitalOcean - <https://www.digitalocean.com/community/tools/nginx> :
 
     - файл конфигурации `test.example.com.conf`, расположенный в директории `/etc/nginx/sites-available`. На него создан симлинк в директории `/etc/nginx/sites-enabled`
 
@@ -213,4 +213,81 @@
     - в браузере Firefox выполнен переход по адресу `https://test.example.com/`
 
     ![test_page](diplom_img/test_page.png "Test page opening") \
-    *Страница открыласть, на сертификат браузер не ругается*
+    *Страница открылась, на сертификат браузер не ругается*
+
+9. Автоматизация запуска сервера Vault в dev режиме и выпуска сертификата
+
+    - создан файл службы `vault-dev.service` в директории `/etc/systemd/system/` для запуска Vault как демона
+
+    ```bash
+    [Unit]
+    Description=Vault Server Dev Mode
+    After=remote-fs.target network.target
+
+    [Service]
+    Type=simple
+    WorkingDirectory=/opt/vault-dev/
+    ExecStart=/usr/bin/vault server -dev -dev-root-token-id root
+    ExecStartPost=/opt/vault-dev/init.sh
+    KillMode=process
+    Restart=on-failure
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+
+    - для автоматической генерации корневого и промежуточного CA после перезапуска сервера создан скрипт `init.sh` в рабочей директории сервера `/opt/vault-dev/`. После запуска службы генерируются CA, роль и в рабочей директории сохраняется корневой сертификат `CA_cert.crt`
+
+    ```bash
+    #!/usr/bin/env bash
+
+    set -eu
+
+    export VAULT_ADDR='http://127.0.0.1:8200'
+
+    # Generate root CA
+    vault secrets enable pki
+    vault secrets tune -max-lease-ttl=87600h pki
+    vault write -field=certificate pki/root/generate/internal \
+        common_name="example.com" \
+        ttl=87600h > CA_cert.crt
+    vault write pki/config/urls \
+        issuing_certificates="$VAULT_ADDR/v1/pki/ca" \
+        crl_distribution_points="$VAULT_ADDR/v1/pki/crl"
+
+    # Generate intermediate CA
+    vault secrets enable -path=pki_int pki
+    vault secrets tune -max-lease-ttl=43800h pki_int
+    vault write -format=json pki_int/intermediate/generate/internal \
+        common_name="example.com Intermediate Authority" \
+        | jq -r '.data.csr' > pki_intermediate.csr
+    vault write -format=json pki/root/sign-intermediate csr=@pki_intermediate.csr \
+        format=pem_bundle ttl="43800h" \
+        | jq -r '.data.certificate' > intermediate.cert.pem
+    vault write pki_int/intermediate/set-signed certificate=@intermediate.cert.pem
+
+    # Create a role
+    vault write pki_int/roles/example-dot-com \
+        allowed_domains="example.com" \
+        allow_subdomains=true \
+        max_ttl="720h"
+
+    # Clean temp files
+    rm -f pki_intermediate.csr
+    rm -f intermediate.cert.pem
+    ```
+
+    - служба активирована и запущена командой `sudo systemctl enable vault-dev.service && sudo systemctl start vault-dev.service`
+
+    ![vault_daemon_status](diplom_img/vault_daemon_status.png "vault-dev daemon status") \
+    *служба успешно запущена*
+
+    - файл корневого сертификата создан в рабочей директории
+
+    ```bash
+    netadmin@netologyvm:~$ sudo ls -lh /opt/vault-dev/
+    total 8.0K
+    -rw-r--r-- 1 root root 1.2K Jan 17 23:19 CA_cert.crt
+    -rwxr-xr-x 1 root root 1.2K Jan 17 23:18 init.sh
+    netadmin@netologyvm:~$
+    ```
