@@ -291,3 +291,71 @@
     -rwxr-xr-x 1 root root 1.2K Jan 17 23:18 init.sh
     netadmin@netologyvm:~$
     ```
+
+    - в каталоге `/opt/vault-dev/` создан скрипт для генерации сертификата домена `test.example.com` по расписанию. В скрипте устанавливается переменная оболочки bash `-x` для вывода в stdout всех выполняемых команд с аргументами (для демонстрации работы скрипта)
+
+    ```bash
+    #!/usr/bin/env bash
+
+    set -eux
+
+    echo "$(date +'%d %b %Y %X') START"
+
+    export VAULT_ADDR='http://127.0.0.1:8200'
+
+    # Generate certificate
+    vault write -format=json pki_int/issue/example-dot-com \
+        common_name="test.example.com" \
+        ttl="720h" > /tmp/payload.json
+
+    # Create key file
+    jq -r '.data.private_key' /tmp/payload.json > /etc/nginx/ssl/test.example.com.key
+    echo "$(date +'%d %b %Y %X') Key file generated"
+
+    # Create certificate file
+    jq -r '.data.certificate' /tmp/payload.json > /etc/nginx/ssl/test.example.com.crt
+    jq -r '.data.ca_chain[]' /tmp/payload.json >> /etc/nginx/ssl/test.example.com.crt
+    echo "$(date +'%d %b %Y %X') Certificate file generated"
+
+    # Restart nginx
+    systemctl restart nginx.service
+    echo "$(date +'%d %b %Y %X') Nginx restarted"
+
+    # Clean tmp file
+    rm -f /tmp/payload.json
+
+    echo "$(date +'%d %b %Y %X') END"
+    ```
+
+    - скрипт генерирует новые файлы ключа и сертификата не изменяя конфигурации веб-сервера и перезапускает nginx для применения изменений
+
+10. Исполнение скрипта генерации сертификата по расписанию
+
+    - в директории `/etc/cron.d/` создан файл `cert_gen` для запуска скрипта `cert_gen.sh` 19-го числа каждого месяца в 00:30. Вывод работы скрипта пишется в файл `/var/log/cert_gen.log`
+
+    ```bash
+    30 0 19 * * root /opt/vault-dev/cert_gen.sh > /var/log/cert_gen.log 2>&1
+    ```
+
+    - результат работы скрипта 19.01.2022 в 00:30
+
+    ![script_run](diplom_img/script_run.png "Script results") \
+    *Результат работы скрипта по расписанию*
+
+    - обновленные файлы в директории `/etc/nginx/ssl/`
+
+    ```bash
+    netadmin@netologyvm:~$ sudo ls -lh /etc/nginx/ssl/
+    total 8.0K
+    -rw-r--r-- 1 root root 2.6K Jan 19 00:30 test.example.com.crt
+    -rw-r--r-- 1 root root 1.7K Jan 19 00:30 test.example.com.key
+    ```
+
+    - тестовая страница в браузере на хостовой машине открывается без ошибки сертификата
+
+    ![page_after_script_run](diplom_img/page_after_script_run.png "Test page") \
+    *ошибки сертификата нет*
+
+    - скриншот информации о сертификате
+
+    ![cert_info](diplom_img/cert_info.png "Certificate Information")
