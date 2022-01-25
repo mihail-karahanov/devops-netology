@@ -15,20 +15,56 @@
   - **CD (Continuous Delivery)** - данный подход на практике позволяет повысить частоту подготовки новых релизов продукта за счет уменьшения количества изменений в них. Небольшие по размеру релизы, после прохождения этапа CI, повторно тестируются на ошибки в тестовой среде и автоматически откатываются на предыдущую версию в случае их обнаружения
   - **CD (Continuous Deployment)** - данная практика позволяет автоматизировать и ускорить процесс развертывания нового релиза продукта в продуктивной среде и доставки его до конечного потребителя
 
+- Основополагающим принципом IaaC является **идемпотентность**. Это принцип, при котором целевая инфраструктура получает одну и ту же конфигурацию, независимо от первоначального состояния.
+
 ## Задача 2
 
-- Чем Ansible выгодно отличается от других систем управление конфигурациями?
-- Какой, на ваш взгляд, метод работы систем конфигурации более надёжный push или pull?
+>- Чем Ansible выгодно отличается от других систем управление конфигурациями?
+>- Какой, на ваш взгляд, метод работы систем конфигурации более надёжный push или pull?
+
+**Ответ:**
+
+- Основные премущества Ansible: не требует дополнительной инфраструктуры для подключения к целевым хостам, использует существующее SSH-окружение; декларативное описание конфигураций в YAML-формате; легко расширяется функционал за счет подключения дополнительных модулей
+- На мой взгляд, наиболее надежным методом работы является Push. При таком подходе центральный управляющий сервер контролирует, кому из целевых хостов была доставлена новая конфигурация, а кому - нет. Также есть возможность быстрого опроса хостов по нужным параметрам
 
 ## Задача 3
 
-Установить на личный компьютер:
+>Установить на личный компьютер:
+>
+>- VirtualBox
+>- Vagrant
+>- Ansible
+>
+>*Приложить вывод команд установленных версий каждой из программ, оформленный в markdown.*
 
-- VirtualBox
-- Vagrant
-- Ansible
+**Ответ:**
 
-*Приложить вывод команд установленных версий каждой из программ, оформленный в markdown.*
+```bash
+netadmin@netstation:~$ virtualbox -h
+Oracle VM VirtualBox VM Selector v6.1.28
+(C) 2005-2021 Oracle Corporation
+All rights reserved.
+
+No special options.
+
+If you are looking for --startvm and related options, you need to use VirtualBoxVM.
+netadmin@netstation:~$ 
+netadmin@netstation:~$ 
+netadmin@netstation:~$ vagrant -v
+Vagrant 2.2.19
+netadmin@netstation:~$ 
+netadmin@netstation:~$ ansible --version
+ansible [core 2.12.1]
+  config file = None
+  configured module search path = ['/home/netadmin/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /home/netadmin/.local/lib/python3.8/site-packages/ansible
+  ansible collection location = /home/netadmin/.ansible/collections:/usr/share/ansible/collections
+  executable location = /home/netadmin/.local/bin/ansible
+  python version = 3.8.10 (default, Nov 26 2021, 20:14:08) [GCC 9.3.0]
+  jinja version = 3.0.3
+  libyaml = True
+netadmin@netstation:~$
+```
 
 ## Задача 4 (*)
 
