@@ -92,14 +92,40 @@ SELECT TABLE_SCHEMA,TABLE_NAME,ENGINE FROM information_schema.TABLES WHERE TABLE
 
 ## Задача 4
 
-Изучите файл `my.cnf` в директории /etc/mysql.
+>Изучите файл `my.cnf` в директории /etc/mysql.
+>
+>Измените его согласно ТЗ (движок InnoDB):
+>
+>- Скорость IO важнее сохранности данных
+>- Нужна компрессия таблиц для экономии места на диске
+>- Размер буффера с незакомиченными транзакциями 1 Мб
+>- Буффер кеширования 30% от ОЗУ
+>- Размер файла логов операций 100 Мб
+>
+>Приведите в ответе измененный файл `my.cnf`.
 
-Измените его согласно ТЗ (движок InnoDB):
+**Ответ:**
 
-- Скорость IO важнее сохранности данных
-- Нужна компрессия таблиц для экономии места на диске
-- Размер буффера с незакомиченными транзакциями 1 Мб
-- Буффер кеширования 30% от ОЗУ
-- Размер файла логов операций 100 Мб
+Отредактированный согласно ТЗ файл `/etc/mysql/my.cnf`:
 
-Приведите в ответе измененный файл `my.cnf`.
+```bash
+#
+# The MySQL  Server configuration file.
+#
+# For explanations see
+# http://dev.mysql.com/doc/mysql/en/server-system-variables.html
+
+[mysqld]
+pid-file        = /var/run/mysqld/mysqld.pid
+socket          = /var/run/mysqld/mysqld.sock
+datadir         = /var/lib/mysql
+secure-file-priv= NULL
+innodb-flush-log-at-trx-commit=2
+innodb_file_per_table=ON
+innodb-log-buffer-size=1048576
+innodb-buffer-pool-size=321912832
+innodb-log-file-size=104857600
+
+# Custom config should go here
+!includedir /etc/mysql/conf.d/
+```
