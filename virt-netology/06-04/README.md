@@ -60,16 +60,57 @@ avg_width = (SELECT MAX(avg_width) FROM "pg_stats" WHERE tablename='orders');
 
 ## Задача 3
 
-Архитектор и администратор БД выяснили, что ваша таблица orders разрослась до невиданных размеров и
-поиск по ней занимает долгое время. Вам, как успешному выпускнику курсов DevOps в нетологии предложили
-провести разбиение таблицы на 2 (шардировать на orders_1 - price>499 и orders_2 - price<=499).
+>Архитектор и администратор БД выяснили, что ваша таблица orders разрослась до невиданных размеров и
+>поиск по ней занимает долгое время. Вам, как успешному выпускнику курсов DevOps в нетологии предложили
+>провести разбиение таблицы на 2 (шардировать на orders_1 - price>499 и orders_2 - price<=499).
+>
+>Предложите SQL-транзакцию для проведения данной операции.
+>
+>Можно ли было изначально исключить "ручное" разбиение при проектировании таблицы orders?
 
-Предложите SQL-транзакцию для проведения данной операции.
+**Ответ:**
 
-Можно ли было изначально исключить "ручное" разбиение при проектировании таблицы orders?
+Транзакция для выполнения разбиения таблицы:
+
+```sql
+CREATE TABLE public.orders_new
+    (LIKE public.orders INCLUDING ALL EXCLUDING INDEXES)
+    PARTITION BY RANGE (price);
+
+CREATE TABLE public.orders_new_lower499 PARTITION OF public.orders_new
+    FOR VALUES FROM (MINVALUE) TO (499);
+
+CREATE TABLE public.orders_new_higher499 PARTITION OF public.orders_new
+    FOR VALUES FROM (499) TO (MAXVALUE);
+
+CREATE INDEX ON public.orders_new_lower499 (price);
+CREATE INDEX ON public.orders_new_higher499 (price);
+
+START TRANSACTION;
+INSERT INTO public.orders_new
+    SELECT * FROM public.orders;
+COMMIT;
+```
+
+Ручное разбиение можно было бы исключить, если бы на этапе проектирования таблицы она создавалась как изначально секционированная (с указанием оператора `PARTITION BY`).
 
 ## Задача 4
 
-Используя утилиту `pg_dump` создайте бекап БД `test_database`.
+>Используя утилиту `pg_dump` создайте бекап БД `test_database`.
+>
+>Как бы вы доработали бэкап-файл, чтобы добавить уникальность значения столбца `title` для таблиц `test_database`?
 
-Как бы вы доработали бэкап-файл, чтобы добавить уникальность значения столбца `title` для таблиц `test_database`?
+**Ответ:**
+
+Выполнен бэкап БД `test_database` командой:
+
+```bash
+pg_dump -U postgres test_database > /var/lib/postgresql/data/backup/test_database_backup.sql
+```
+
+Для добавления уникальности значений в столбце `title` можно добавить в бэкап-файл следующую команду:
+
+```sql
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_utitle UNIQUE (title);
+```
