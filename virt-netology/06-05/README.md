@@ -159,30 +159,64 @@ xpack.security.transport.ssl.enabled: false
 
 ## Задача 3
 
-В данном задании вы научитесь:
+>В данном задании вы научитесь:
+>
+>- создавать бэкапы данных
+>- восстанавливать индексы из бэкапов
+>
+>...
+>
+>**Приведите в ответе** запрос API и результат вызова API для создания репозитория.
+>
+>Создайте индекс `test` с 0 реплик и 1 шардом и **приведите в ответе** список индексов.
+>
+>...
+>
+>**Приведите в ответе** список файлов в директории со `snapshot`ами.
+>
+>Удалите индекс `test` и создайте индекс `test-2`. **Приведите в ответе** список индексов.
+>
+>...
+>
+>**Приведите в ответе** запрос к API восстановления и итоговый список индексов.
+>
+>...
+>
 
-- создавать бэкапы данных
-- восстанавливать индексы из бэкапов
+**Ответ:**
 
-Создайте директорию `{путь до корневой директории с elasticsearch в образе}/snapshots`.
+Запрос API для регистрации репозитория бэкапов и вывод результата запроса:
 
-Используя API [зарегистрируйте](https://www.elastic.co/guide/en/elasticsearch/reference/current/snapshots-register-repository.html#snapshots-register-repository) данную директорию как `snapshot repository` c именем `netology_backup`.
+```bash
+curl --no-progress-meter \
+  -H "Accept: application/vnd.elasticsearch+json;compatible-with=7" \
+  -H "Content-Type: application/vnd.elasticsearch+json;compatible-with=7" \
+  -X PUT http://localhost:9200/_snapshot/netology_backup \
+  -d '{"type":"fs","settings":{"location":"/elasticsearch-8.1.0/snapshots/netology_backup"}}' | \
+  jq
+```
 
-**Приведите в ответе** запрос API и результат вызова API для создания репозитория.
+![repo_registration](/img/06_05_repo_reg.png "API call output")
 
-Создайте индекс `test` с 0 реплик и 1 шардом и **приведите в ответе** список индексов.
+Создал индекс `test` согласно задания. Вывод списка индексов:
 
-[Создайте `snapshot`](https://www.elastic.co/guide/en/elasticsearch/reference/current/snapshots-take-snapshot.html) состояния кластера `elasticsearch`.
+![index_list](/img/06_05_index_list.png "Index list")
 
-**Приведите в ответе** список файлов в директории со `snapshot`ами.
+Создал snapshot с именем `test_snapshot`. Вывод списка файлов в директории с бэкапами:
 
-Удалите индекс `test` и создайте индекс `test-2`. **Приведите в ответе** список индексов.
+![file_listing](/img/06_05_bckp_dir.png "Snapshot files")
 
-[Восстановите](https://www.elastic.co/guide/en/elasticsearch/reference/current/snapshots-restore-snapshot.html) состояние
-кластера `elasticsearch` из `snapshot`, созданного ранее.
+Удалил индекс `test` и создал индекс `test-2`. Список индексов:
 
-**Приведите в ответе** запрос к API восстановления и итоговый список индексов.
+![new_index_list](/img/06_05_new_index_list.png "Index list")
 
-Подсказки:
+Выполнил восстановление кластера из snapshot. Выполненый запрос API и итоговый список индексов:
 
-- возможно вам понадобится доработать `elasticsearch.yml` в части директивы `path.repo` и перезапустить `elasticsearch`
+```bash
+curl --no-progress-meter \
+  -H "Accept: application/vnd.elasticsearch+json;compatible-with=7" \
+  -H "Content-Type: application/vnd.elasticsearch+json;compatible-with=7" \
+  -X POST http://localhost:9200/_snapshot/netology_backup/test_snapshot/_restore | jq
+```
+
+![final_index_list](/img/06_05_final_index_list.png "Index list")
