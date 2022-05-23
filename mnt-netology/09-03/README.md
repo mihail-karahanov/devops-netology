@@ -36,67 +36,68 @@
 ![freestyle_log](/img/09_03_freestyle_log.png)
 2. Создал и добавил в репо Jenkinsfile следующего содержания:
 
-  ```groovy
-  pipeline {
-    agent {
-      label 'ansible_docker'
-    }
-    stages {
-      stage('First stage'){
-        steps {
-          echo "I'm runing"
-          git credentialsId: 'GitHub-DemoRepo', url: 'git@github.com:mihail-karahanov/example-playbook.git'
+    ```groovy
+    pipeline {
+      agent {
+        label 'ansible_docker'
+      }
+      stages {
+        stage('First stage'){
+          steps {
+            echo "I'm runing"
+            git credentialsId: 'GitHub-DemoRepo', url: 'git@github.com:mihail-karahanov/example-playbook.git'
+          }
+        }
+        stage('Second stage'){
+          steps {
+            echo "And I'm too"
+            sh '''
+              export LC_ALL=en_US.utf8
+              export LANG=en_US.utf8
+              python3 -m pip install --upgrade molecule
+              mkdir roles
+              ansible-galaxy role install -p roles/ -r requirements.yml java && \
+              ansible-playbook -i inventory/prod.yml site.yml
+              java -version
+            '''
+          }
         }
       }
-      stage('Second stage'){
-        steps {
-          echo "And I'm too"
-          sh '''
-            export LC_ALL=en_US.utf8
-            export LANG=en_US.utf8
-            python3 -m pip install --upgrade molecule
-            mkdir roles
-            ansible-galaxy role install -p roles/ -r requirements.yml java && \
-            ansible-playbook -i inventory/prod.yml site.yml
-            java -version
-          '''
-        }
-      }
     }
-  }
-  ```
+    ```
 
-Перенастроил job на исполнение Jenkinsfile из репо. Результат выполнения:
-![pipeline_log](/img/09_03_pipeline_log.png)
+    Перенастроил job на исполнение Jenkinsfile из репо. Результат выполнения:
+    ![pipeline_log](/img/09_03_pipeline_log.png)
 3. Создал и перенос в репо файл `ScriptedJenkinsfile` следующего содержания:
 
-  ```groovy
-  node("ansible_docker") {
+    ```groovy
+    node("ansible_docker") {
 
-      stage("Git checkout"){
-          git credentialsId: 'GitHub-DemoRepo', url: 'git@github.com:mihail-karahanov/example-playbook.git'
-      }
-      stage("Check ssh key"){
-          secret_check=true
-      }
-      stage("Run playbook"){
-          if (secret_check){
-              sh '''
-                  mkdir roles
-                  ansible-galaxy role install -p roles/ -r requirements.yml java && \
-                  ansible-playbook site.yml -i inventory/prod.yml
-              '''
-          }
-          else{
-              echo 'no more keys'
-          }
-          
-      }
-  }
-  ```
+        stage("Git checkout"){
+            git credentialsId: 'GitHub-DemoRepo', url: 'git@github.com:mihail-karahanov/example-playbook.git'
+        }
+        stage("Check ssh key"){
+            secret_check=true
+        }
+        stage("Run playbook"){
+            if (secret_check){
+                sh '''
+                    mkdir roles
+                    ansible-galaxy role install -p roles/ -r requirements.yml java && \
+                    ansible-playbook site.yml -i inventory/prod.yml
+                '''
+            }
+            else{
+                echo 'no more keys'
+            }
+            
+        }
+    }
+    ```
 
-Результат выполнения job в Jenkins:
-![scripted_log](/img/09_03_scripted_log.png)
+    Результат выполнения job в Jenkins:
+    ![scripted_log](/img/09_03_scripted_log.png)
+4. [Ссылка](https://github.com/mihail-karahanov/example-playbook) на репозиторий. Также прикрепил ссылку как результат выполнения ДЗ.
 
 ## Необязательная часть
 
