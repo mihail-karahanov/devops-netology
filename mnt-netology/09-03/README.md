@@ -24,6 +24,80 @@
 
 ## Выполнение основной части ДЗ
 
+Установил Jenkins в Docker согласно инструкции. Поднял Docker Cloud, настроил использование рекомендуемого образа в качестве динамического агента. Выполнил форк указанного репозитория. Настройки Cloud:
+
+![cloud1](/img/09_03_cloud1.png "Cloud params")
+
+![cloud2](/img/09_03_cloud2.png "Agent params")
+
+1. Создал Freestyle Job, настроил git checkout из репозитория. Настроил следующие параметры запуска shell:
+![freestyle_shell](/img/09_03_freestyle_shell.png)
+Добавил команду `java -version` для проверки корректной установки Java. Результат выполнения job:
+![freestyle_log](/img/09_03_freestyle_log.png)
+2. Создал и добавил в репо Jenkinsfile следующего содержания:
+
+  ```groovy
+  pipeline {
+    agent {
+      label 'ansible_docker'
+    }
+    stages {
+      stage('First stage'){
+        steps {
+          echo "I'm runing"
+          git credentialsId: 'GitHub-DemoRepo', url: 'git@github.com:mihail-karahanov/example-playbook.git'
+        }
+      }
+      stage('Second stage'){
+        steps {
+          echo "And I'm too"
+          sh '''
+            export LC_ALL=en_US.utf8
+            export LANG=en_US.utf8
+            python3 -m pip install --upgrade molecule
+            mkdir roles
+            ansible-galaxy role install -p roles/ -r requirements.yml java && \
+            ansible-playbook -i inventory/prod.yml site.yml
+            java -version
+          '''
+        }
+      }
+    }
+  }
+  ```
+
+Перенастроил job на исполнение Jenkinsfile из репо. Результат выполнения:
+![pipeline_log](/img/09_03_pipeline_log.png)
+3. Создал и перенос в репо файл `ScriptedJenkinsfile` следующего содержания:
+
+  ```groovy
+  node("ansible_docker") {
+
+      stage("Git checkout"){
+          git credentialsId: 'GitHub-DemoRepo', url: 'git@github.com:mihail-karahanov/example-playbook.git'
+      }
+      stage("Check ssh key"){
+          secret_check=true
+      }
+      stage("Run playbook"){
+          if (secret_check){
+              sh '''
+                  mkdir roles
+                  ansible-galaxy role install -p roles/ -r requirements.yml java && \
+                  ansible-playbook site.yml -i inventory/prod.yml
+              '''
+          }
+          else{
+              echo 'no more keys'
+          }
+          
+      }
+  }
+  ```
+
+Результат выполнения job в Jenkins:
+![scripted_log](/img/09_03_scripted_log.png)
+
 ## Необязательная часть
 
 1. Создать скрипт на groovy, который будет собирать все Job, которые завершились хотя бы раз неуспешно. Добавить скрипт в репозиторий с решеним с названием `AllJobFailure.groovy`
