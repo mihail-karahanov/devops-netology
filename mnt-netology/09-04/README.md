@@ -48,3 +48,9 @@
 Выполнил merge новой ветки в `master`. По результатам сборки артефактов в ветке `master` нет. Настроил сохранение артефактов:
 
 ![artifacts](/img/09_04_artifacts.png)
+
+Запустил повторно сборку по ветке `master` - артефакты собраны:
+
+![build_artifacts](/img/09_04_build_artifacts.png)
+
+Удалил ветку `feature/add_reply`, синхронизировал `build configuration` с репозиторием.
