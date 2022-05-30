@@ -23,6 +23,41 @@
 
 ### Выполнение этапа DevOps
 
+Для оптимизации выполнения сборки подготовил образ на базе CentOS 7 с предустановленным Python версии 3.8.13 используя следующий Dockerfile:
+
+```dockerfile
+FROM centos:centos7
+
+RUN yum -y update && yum -y groupinstall "Development Tools" && \
+    yum -y install gcc openssl-devel bzip2-devel libffi-devel wget && \
+    yum -y clean all  && rm -rf /var/cache && \
+    wget https://www.python.org/ftp/python/3.8.13/Python-3.8.13.tgz && \
+    tar xvf Python-3.8.13.tgz && cd Python-3.8.13 && \
+    ./configure --enable-optimizations --with-ensurepip=install && \
+    make && make altinstall && cd / && rm -rf /Python-3.8.13*
+```
+
+Для выполнения непосредственно самой сборки, подготовил следующий Dockerfile на базе ранее созданого образа:
+
+```dockerfile
+FROM mihailkarahanov/centos7-python38:latest
+
+RUN python3.8 -m pip install --no-cache-dir flask flask-jsonpify flask-restful && \
+    mkdir -p /python_api
+
+COPY python-api.py /python_api
+
+WORKDIR /python_api
+
+EXPOSE 5290/tcp
+
+ENTRYPOINT [ "python3.8", "./python-api.py" ]
+```
+
+Так как в данный момент использование `shared runners` невозможно, установил в Docker и зарегистрировал свой `specific runner` с executor type - `docker`:
+
+![runner](/img/09_05_runner.png)
+
 ### Product Owner
 
 Вашему проекту нужна бизнесовая доработка: необходимо поменять JSON ответа на вызов метода GET `/rest/api/get_info`, необходимо создать Issue в котором указать:
