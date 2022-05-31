@@ -58,13 +58,60 @@ ENTRYPOINT [ "python3.8", "./python-api.py" ]
 
 ![runner](/img/09_05_runner.png)
 
-### Product Owner
+Для запуска сборки согласно условий из задания, подготовил файл `.gitlab-ci.yml` следующего содержания:
 
-Вашему проекту нужна бизнесовая доработка: необходимо поменять JSON ответа на вызов метода GET `/rest/api/get_info`, необходимо создать Issue в котором указать:
+```yaml
+image: docker:latest
 
-1. Какой метод необходимо исправить
-2. Текст с `{ "message": "Already started" }` на `{ "message": "Running"}`
-3. Issue поставить label: feature
+services:
+  - name: docker:dind
+    alias: docker
+
+variables:
+  IMAGE: python-api
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+
+stages:
+  - build
+
+build:
+  stage: build
+  tags:
+    - docker
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE/$IMAGE:latest" .
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "main" ]]; then
+        docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" registry.gitlab.com
+        docker push "$CI_REGISTRY_IMAGE/$IMAGE:latest"
+      fi
+  
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      exists:
+        - Dockerfile
+```
+
+После коммита сборка завершилась успешно. Docker-образ опубликован в Container registry проекта:
+
+![pipeline_passed](/img/09_05_pipeline_passed.png)
+
+![registry](/img/09_05_registry.png)
+
+>### Product Owner
+>
+>Вашему проекту нужна бизнесовая доработка: необходимо поменять JSON ответа на вызов метода GET `/rest/api/get_info`, необходимо создать Issue в котором указать:
+>
+>1. Какой метод необходимо исправить
+>2. Текст с `{ "message": "Already started" }` на `{ "message": "Running"}`
+>3. Issue поставить label: feature
+
+### Выполнение этапа Product Owner
+
+Создана Issue:
+
+![issue](/img/09_05_issue.png)
 
 ### Developer
 
