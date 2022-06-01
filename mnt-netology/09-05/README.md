@@ -152,10 +152,65 @@ docker run -d --name=api -p 5290:5290 registry.gitlab.com/net_dev_man/example-gi
 
 Закрыл Issue
 
-## Итог
+>## Необязательная часть
+>
+>Автомазируйте работу тестировщика, пусть у вас будет отдельный конвейер, который автоматически поднимает контейнер и выполняет проверку, например, при помощи curl. На основе вывода - будет приниматься решение об успешности прохождения тестирования
 
-После успешного прохождения всех ролей - отправьте ссылку на ваш проект в гитлаб, как решение домашнего задания
+### Выполнение необязательной части
 
-## Необязательная часть
+Добавил в pipeline дополнительный этап тестирования. Этап стартует только если успешно завершился этап сборки. Далее выполняется скачивание из репозитория и запуск собранного на предыдущем этапе образа. Тест ответа API выполняется с помощью `curl`. Для успешного прохождения этапа, в ответе должна присутствовать строка `Running`. Файл `.gitlab-ci.yml` имеет следующий вид:
 
-Автомазируйте работу тестировщика, пусть у вас будет отдельный конвейер, который автоматически поднимает контейнер и выполняет проверку, например, при помощи curl. На основе вывода - будет приниматься решение об успешности прохождения тестирования
+```yaml
+image: docker:latest
+
+services:
+  - name: docker:dind
+    alias: docker
+
+variables:
+  IMAGE: python-api
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+
+stages:
+  - build
+  - test
+
+api_build:
+  stage: build
+  tags:
+    - docker
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE/$IMAGE:latest" .
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "main" ]]; then
+        docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" registry.gitlab.com
+        docker push "$CI_REGISTRY_IMAGE/$IMAGE:latest"
+      fi
+  rules:
+    - if: $CI_COMMIT_BRANCH
+      exists:
+        - Dockerfile
+
+api_test:
+  stage: test
+  tags:
+    - docker
+  script:
+    - docker run -d --name api "$CI_REGISTRY_IMAGE/$IMAGE:latest"
+    - sleep 3s
+    - RESP=$(docker exec -i api curl -s http://localhost:5290/get_info)
+    - echo "$RESP"
+    - |
+      if [[ "$RESP" =~ "Running" ]]; then
+        echo "Test - OK"
+      else
+        echo "Test - FAILED"
+        exit 255
+      fi
+  when: on_success
+```
+
+Выполнение pipeline завершается успешно:
+
+![testing_pipeline](/img/09_05_testing_pipeline.png)
