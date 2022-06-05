@@ -56,9 +56,52 @@
 
 ## Необязательная часть
 
-1. При помощи `ansible-vault` расшифруйте все зашифрованные файлы с переменными.
-2. Зашифруйте отдельное значение `PaSSw0rd` для переменной `some_fact` паролем `netology`. Добавьте полученное значение в `group_vars/all/exmp.yml`.
-3. Запустите `playbook`, убедитесь, что для нужных хостов применился новый `fact`.
-4. Добавьте новую группу хостов `fedora`, самостоятельно придумайте для неё переменную. В качестве образа можно использовать [этот](https://hub.docker.com/r/pycontribs/fedora).
-5. Напишите скрипт на bash: автоматизируйте поднятие необходимых контейнеров, запуск ansible-playbook и остановку контейнеров.
-6. Все изменения должны быть зафиксированы и отправлены в вашей личный репозиторий.
+>1. При помощи `ansible-vault` расшифруйте все зашифрованные файлы с переменными.
+>2. Зашифруйте отдельное значение `PaSSw0rd` для переменной `some_fact` паролем `netology`. Добавьте полученное значение в `group_vars/all/exmp.yml`.
+>3. Запустите `playbook`, убедитесь, что для нужных хостов применился новый `fact`.
+>4. Добавьте новую группу хостов `fedora`, самостоятельно придумайте для неё переменную. В качестве образа можно использовать [этот](https://hub.docker.com/r/pycontribs/fedora).
+>5. Напишите скрипт на bash: автоматизируйте поднятие необходимых контейнеров, запуск ansible-playbook и остановку контейнеров.
+>6. Все изменения должны быть зафиксированы и отправлены в вашей личный репозиторий.
+
+## Выполнение необязательной части
+
+1. Расшифровал ранее зашифрованные файлы командами `ansible-vault decrypt group_vars/deb/examp.yml` и `ansible-vault decrypt group_vars/el/examp.yml`
+2. Выполнил шифрование значения переменной командой `ansible-vault encrypt_string`
+3. Выполнил запуск playbook для `test.yml`. Результат:
+
+    ![facts](/img/08_01_optional_fact.png)
+
+4. Создал новую группу хостов `rpm`. Переменная для этой группы имеет значение - `rpm default fact`. В файл `prod.yml` добавил следующее:
+
+    ```yaml
+      rpm:
+        hosts:
+          fedora:
+            ansible_connection: docker
+    ```
+
+5. Создал скрипт `test.sh` следующего содержания:
+
+    ```bash
+    #!/bin/bash
+
+    set -eu
+
+    # Start docker containers
+    docker run -d --name ubuntu pycontribs/ubuntu:latest sleep 3600
+    docker run -d --name fedora pycontribs/fedora:latest sleep 3600
+    docker run -d --name centos7 pycontribs/centos:7 sleep 3600
+
+    # Run playbook
+    ansible-playbook -i ./inventory/prod.yml --ask-vault-pass ./site.yml
+
+    # Stop containers
+    docker stop ubuntu fedora centos7
+
+    # Remove containers
+    docker rm ubuntu fedora centos7
+    ```
+
+    Результат работы скрипта:
+
+    ![script_run](/img/08_01_optional_script_run.png)
