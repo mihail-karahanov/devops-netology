@@ -1,12 +1,12 @@
-output "instance_private_ip" {
-  description = "Instance private IP address"
-  value = yandex_compute_instance.test.network_interface.0.ip_address
-}
+# output "instance_private_ip" {
+#   description = "Instance private IP address"
+#   value = yandex_compute_instance.test.network_interface.0.ip_address
+# }
 
-output "instance_public_ip" {
-  description = "Instance public IP address"
-  value = yandex_compute_instance.test.network_interface.0.nat_ip_address
-}
+# output "instance_public_ip" {
+#   description = "Instance public IP address"
+#   value = yandex_compute_instance.test.network_interface.0.nat_ip_address
+# }
 
 output "instance_subnet_id" {
   description = "Subnet ID of the instance"
